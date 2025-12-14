@@ -1,6 +1,6 @@
 # Architecture Microservices avec Spring Boot & Docker
 
-![Schéma de l'Architecture](images/architecture.png)
+![Schéma de l'Architecture](images/archi.png)
 
 Ce projet met en œuvre une architecture microservices complète utilisant Spring Boot, Spring Cloud Gateway et MySQL, le tout conteneurisé avec Docker.
 
