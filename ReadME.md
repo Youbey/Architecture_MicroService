@@ -20,8 +20,8 @@ Pré-requis : Avoir **Docker** et **Docker Compose** installés.
 
 1.  Cloner le dépôt :
     ```bash
-    git clone [https://github.com/TON_USER/TP-Architecture-Microservices.git](https://github.com/TON_USER/TP-Architecture-Microservices.git)
-    cd TP-Architecture-Microservices
+    git clone [https://github.com/Youbey/Architecture_Microservice.git](https://github.com/Youbey/Architecture_Microservice.git)
+    cd Architecture_Microservice
     ```
 
 2.  Lancer l'environnement complet (Build + Run) :
