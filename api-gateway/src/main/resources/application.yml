@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: user-route
+          uri: http://localhost:8081
+          predicates:
+            - Path=/ms-user/**
+          filters:
+            - StripPrefix=1
+
+        - id: location-route
+          uri: http://localhost:8082
+          predicates:
+            - Path=/ms-location/**
+          filters:
+            - StripPrefix=1
+
+# Configuration pour desactiver Eureka
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false

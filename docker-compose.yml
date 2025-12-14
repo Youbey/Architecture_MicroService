@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. BASES DE DONNÉES
+  # ==========================================
+  user-db:
+    image: mysql:8.0
+    container_name: user-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: user_db
+    networks:
+      - net-user-db # Réseau privé MS-User <-> DB
+    volumes:
+      - user-db-data:/var/lib/mysql
+    # Pas de "ports" exposé (sécurité demandée par le sujet), sauf si tu veux debugger
+
+  location-db:
+    image: mysql:8.0
+    container_name: location-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: location_db
+    networks:
+      - net-location-db # Réseau privé MS-Location <-> DB
+    volumes:
+      - location-db-data:/var/lib/mysql
+
+  # ==========================================
+  # 2. MICROSERVICES
+  # ==========================================
+  ms-user:
+    build: ./MS-User # Construit l'image à partir du Dockerfile dans ce dossier
+    container_name: ms-user
+    environment:
+      # On écrase la config du application.properties ici !
+      SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/user_db?createDatabaseIfNotExist=true&serverTimezone=UTC
+      SERVER_PORT: 8081
+    depends_on:
+      - user-db
+    networks:
+      - net-user-db # Pour parler à sa BDD
+      - net-gateway # Pour parler au Gateway
+
+  ms-location:
+    build: ./MS-Location
+    container_name: ms-location
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://location-db:3306/location_db?createDatabaseIfNotExist=true&serverTimezone=UTC
+      SERVER_PORT: 8082
+    depends_on:
+      - location-db
+    networks:
+      - net-location-db # Pour parler à sa BDD
+      - net-gateway # Pour parler au Gateway
+
+  # ==========================================
+  # 3. API GATEWAY
+  # ==========================================
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080" # SEUL port exposé à l'extérieur [cite: 20]
+    environment:
+      # On configure les routes dynamiquement pour utiliser les noms des conteneurs
+      SPRING_CLOUD_GATEWAY_ROUTES_0_ID: user-route
+      SPRING_CLOUD_GATEWAY_ROUTES_0_URI: http://ms-user:8081
+      SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0: Path=/ms-user/**
+      SPRING_CLOUD_GATEWAY_ROUTES_0_FILTERS_0: StripPrefix=1
+
+      SPRING_CLOUD_GATEWAY_ROUTES_1_ID: location-route
+      SPRING_CLOUD_GATEWAY_ROUTES_1_URI: http://ms-location:8082
+      SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0: Path=/ms-location/**
+      SPRING_CLOUD_GATEWAY_ROUTES_1_FILTERS_0: StripPrefix=1
+
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+    networks:
+      - net-gateway # Pour parler aux microservices
+
+# ==========================================
+# RÉSEAUX (NETWORKS) [cite: 21]
+# ==========================================
+networks:
+  net-gateway:     # Entre Gateway et Microservices
+  net-user-db:     # Entre MS-User et sa DB
+  net-location-db: # Entre MS-Location et sa DB
+
+volumes:
+  user-db-data:
+  location-db-data:
